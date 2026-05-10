@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bondivideo — Montevideo Bus App</title>
+  <meta name="description" content="Real-time bus information for Montevideo. Find routes, live departures, and track buses on the map." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:       #1947FF;
+      --blue-dark:  #1030CC;
+      --blue-light: #4D70FF;
+      --blue-surf:  #EEF1FF;
+      --celeste:    #61B8E8;
+      --text:       #1A1A2E;
+      --text-mid:   #5A6478;
+      --text-soft:  #9CA3AF;
+      --surface:    #F5F7FA;
+      --border:     #E5E9F0;
+      --white:      #FFFFFF;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--surface);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--blue);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px;
+      text-decoration: none;
+    }
+    .nav-brand img {
+      width: 28px; height: 28px; border-radius: 7px;
+    }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-links a {
+      color: rgba(255,255,255,0.75); text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      padding: 6px 12px; border-radius: 999px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-links a:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(180deg, #1030CC 0%, #1947FF 100%);
+      color: #fff;
+      text-align: center;
+      padding: 80px 24px 112px;
+      position: relative;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 56px;
+      background: var(--surface);
+      clip-path: ellipse(55% 100% at 50% 100%);
+    }
+    .app-icon {
+      width: 108px; height: 108px;
+      border-radius: 26px;
+      overflow: hidden;
+      display: inline-block;
+      margin-bottom: 28px;
+      box-shadow: 0 20px 56px rgba(0,0,0,0.3);
+    }
+    .app-icon img { width: 100%; height: 100%; display: block; }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+    }
+    .hero p {
+      font-size: 1.1rem; opacity: 0.88;
+      margin-top: 16px; max-width: 480px; margin-inline: auto;
+    }
+    .pill-row {
+      display: flex; gap: 10px; justify-content: center;
+      flex-wrap: wrap; margin-top: 32px;
+    }
+    .pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px; padding: 7px 16px;
+      font-size: 0.85rem; font-weight: 600;
+    }
+    .pill svg { width: 14px; height: 14px; fill: currentColor; }
+
+    /* ── Sections ── */
+    .section {
+      max-width: 760px; margin: 0 auto; padding: 64px 24px;
+    }
+    .section-title {
+      font-size: 1.6rem; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 32px;
+    }
+    .section-title span { color: var(--blue); }
+
+    /* ── Feature grid ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .feat-card {
+      background: var(--white); border-radius: 20px;
+      padding: 24px 20px; border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(25,71,255,0.06);
+    }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--blue-surf);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+    .feat-icon svg { width: 22px; height: 22px; stroke: var(--blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feat-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .feat-card p  { font-size: 0.85rem; color: var(--text-mid); line-height: 1.5; }
+
+    /* ── Privacy ── */
+    .privacy-card {
+      background: var(--white); border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(25,71,255,0.06);
+      padding: 40px;
+    }
+    .privacy-card h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .privacy-date { font-size: 0.82rem; color: var(--text-soft); margin-bottom: 28px; }
+    .privacy-section { margin-bottom: 24px; }
+    .privacy-section h3 {
+      font-size: 0.82rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      color: var(--blue); margin-bottom: 10px;
+    }
+    .privacy-section p,
+    .privacy-section li { font-size: 0.95rem; color: var(--text-mid); margin-bottom: 8px; }
+    .privacy-section ul { padding-left: 20px; }
+    .privacy-section a { color: var(--blue); text-decoration: none; }
+    .privacy-section a:hover { text-decoration: underline; }
+    .check-list { list-style: none; padding: 0; }
+    .check-list li { padding-left: 24px; position: relative; margin-bottom: 8px; }
+    .check-list li::before { content: '✓'; position: absolute; left: 0; color: var(--blue); font-weight: 700; }
+
+    .contact-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--blue-surf); border-radius: 14px; padding: 16px 20px; margin-top: 8px;
+    }
+    .contact-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .contact-icon svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .contact-row p { font-size: 0.9rem; color: var(--text-mid); }
+    .contact-row a { color: var(--blue); font-weight: 600; }
+
+    .divider { height: 1px; background: var(--border); max-width: 760px; margin: 0 auto; }
+
+    footer {
+      text-align: center; padding: 32px 24px;
+      font-size: 0.85rem; color: var(--text-soft);
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-brand">
+      <img src="/icon.png" alt="Bondivideo" />
+      Bondivideo
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="app-icon"><img src="/icon.png" alt="Bondivideo app icon" /></div>
+    <h1>Bondivideo</h1>
+    <p>Real-time bus information for Montevideo, Uruguay — routes, live departures, and vehicle tracking.</p>
+    <div class="pill-row">
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        Montevideo
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        Live tracking
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="22" height="12" rx="2"/><path d="M12 12h.01"/><path d="M1 10h22M1 14h22"/></svg>
+        STM data
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Free
+      </span>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <div class="section" id="features">
+    <h2 class="section-title">Everything you need to <span>get around</span></h2>
+    <div class="features">
+
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </div>
+        <h3>Journey Planner</h3>
+        <p>Find the best route between any two points in Montevideo.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Live Departures</h3>
+        <p>Real-time departures for any bus stop in the city.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        </div>
+        <h3>Live Map</h3>
+        <p>Track buses live and see exactly where they are right now.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3>Favourites</h3>
+        <p>Save your regular stops and lines for instant access.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <h3>ES / EN</h3>
+        <p>Full Spanish and English support throughout the app.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <h3>Accessibility</h3>
+        <p>Wheelchair accessibility info shown for every route.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Privacy Policy -->
+  <div class="section" id="privacy">
+    <h2 class="section-title"><span>Privacy</span> Policy</h2>
+    <div class="privacy-card">
+
+      <h2>Privacy Policy</h2>
+      <p class="privacy-date">Last updated: May 2025</p>
+
+      <div class="privacy-section">
+        <h3>Overview</h3>
+        <p>Bondivideo is a free, independent app for public transit in Montevideo. We built it with privacy in mind — the app works fully without any account, and we collect no personal data whatsoever.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>What we do NOT collect</h3>
+        <ul class="check-list">
+          <li>No name, email address, or account information</li>
+          <li>No location history — GPS is used only on-device</li>
+          <li>No analytics or usage tracking</li>
+          <li>No advertising identifiers</li>
+          <li>No crash reporting tools</li>
+          <li>No data is ever sold or shared with third parties</li>
+        </ul>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Location</h3>
+        <p>The app requests access to your device location solely to center the map on your position and show nearby bus stops. Your location is never transmitted to any server — it stays entirely on your device.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Local storage</h3>
+        <p>Your saved stops, saved journeys, and preferences (language, walking speed) are stored locally on your device only. This data is never uploaded or shared anywhere.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Transit data</h3>
+        <p>Live bus positions and departure times are fetched in real time from the public STM Montevideo API (<a href="https://datos.gub.uy" target="_blank" rel="noopener">datos.gub.uy</a>). These requests contain no personal information.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Children</h3>
+        <p>Bondivideo does not knowingly collect any information from children under 13. The app contains no age-restricted content.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Changes to this policy</h3>
+        <p>If we update this policy, the new version will be published on this page with an updated date. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Contact</h3>
+        <div class="contact-row">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <p>Questions or concerns? <a href="mailto:workspace@domiovastgoedbeheer.nl">workspace@domiovastgoedbeheer.nl</a></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Bondivideo &nbsp;·&nbsp;
+    <a href="#privacy">Privacy Policy</a> &nbsp;·&nbsp;
+    Data: <a href="https://datos.gub.uy" target="_blank" rel="noopener">STM Montevideo</a>
+  </footer>
+
+</body>
+</html>
